@@ -73,7 +73,17 @@
         };
       })(this));
       font = "bold 32px Courier";
+      this.prevwordDiv = this.addUiElement("div", "spritz_word_prev", this.rootDiv);
       this.wordDiv = this.addUiElement("div", "spritz_word", this.rootDiv);
+      this.nextwordDiv = this.addUiElement("div", "spritz_word_next", this.rootDiv);
+      this.wordDiv.style.display = "inline-block";
+      this.wordDiv.style.padding = "0 1em";
+      this.prevwordDiv.style.display = "inline-block";
+      this.nextwordDiv.style.display = "inline-block";
+      this.prevwordDiv.style.font = font;
+      this.nextwordDiv.style.font = font;
+      this.prevwordDiv.style.color = "#ddd";
+      this.nextwordDiv.style.color = "#ddd";      
       this.formerSpan = this.addUiElement("span", "spritz_former", this.wordDiv);
       this.formerSpan.style.font = font;
       this.pivotSpan = this.addUiElement("span", "spritz_pivot", this.wordDiv);
@@ -82,9 +92,6 @@
       this.latterSpan = this.addUiElement("span", "spritz_latter", this.wordDiv);
       this.latterSpan.style.font = font;
       this.controlsDiv = this.addUiElement("div", "spritz_controls", this.rootDiv);
-      this.wpmSelectLabel = this.addUiElement("label", "spritz_wpmlabel", this.controlsDiv);
-      this.wpmSelectLabel.innerHTML = "WPM:";
-      this.wpmSelectLabel.removeAttribute("style");
       this.wpmSelect = this.addUiElement("select", "spritz_wpm", this.controlsDiv);
       this.wpmSelect.onclick = (function(_this) {
         return function(event) {
@@ -98,7 +105,8 @@
       })(this);
       for (wpm = j = 200; j <= 1000; wpm = j += 50) {
         wpmOption = document.createElement("option");
-        wpmOption.text = wpm;
+        wpmOption.text = wpm+" wpm";
+        wpmOption.value = wpm;
         if (j == 350) { wpmOption.selected = true; }
         this.wpmSelect.add(wpmOption);
       }
@@ -152,7 +160,7 @@
       return parseInt(wpm);
     };
 
-    Spritz.prototype.setWord = function(word) {
+    Spritz.prototype.setWord = function(word, prevword, nextword) {
       var former, latter, pivot, pivotIndex;
       pivotIndex = 0;
       if (word.length > 1) {
@@ -174,6 +182,9 @@
       while (latter.length > former.length) {
         former = "\u00A0" + former;
       }
+      
+      this.prevwordDiv.innerHTML = (typeof prevword !== 'undefined') ? prevword : '';
+      this.nextwordDiv.innerHTML =  (typeof nextword !== 'undefined') ? nextword : '';
       this.formerSpan.innerHTML = former;
       return this.latterSpan.innerHTML = latter;
     };
@@ -196,7 +207,9 @@
       callback = (function(_this) {
         return function() {
           if (_this.currentWordIndex < _this.words.length) {
-            _this.setWord(_this.words[_this.currentWordIndex++]);
+            _this.setWord(_this.words[_this.currentWordIndex], _this.words[_this.currentWordIndex-1],_this.words[_this.currentWordIndex+1] );
+            _this.currentWordIndex++;            
+            return;
           } else {
             _this.stop();
           }
