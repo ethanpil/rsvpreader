@@ -33,20 +33,72 @@
       this.words = [];
       this.intervalId = null;
       this.rootDiv = document.createElement("div");
+
+      this.spritzStyles= `
+        #spritz_root {
+          position: fixed;
+          z-index: 9999;
+          width: 400px;
+          left: 50%;
+          margin: 0px;
+          margin-left: -200px;
+          padding: 10px;
+          background-color: white;
+          border: 3px solid black;
+          cursor: move;
+        }
+        #spritz-flex-container {
+          text-align: center;
+          font-family: courier;
+          font-size: 32px;
+          font-weight: bold;
+        }
+
+        #spritz_word_prev { 
+          color: #ddd;
+        }
+        #spritz_word_former  { 
+        }
+        #spritz_word_pivot { 
+          color: red;
+        }     
+        #spritz_word_latter { 
+        } 
+        #spritz_word_next { 
+          color: #ddd;
+        }
+        #spritz_controls {
+          padding: 15px 0 0 0;
+          text-align: center;
+        }
+
+        #spritz_word_pivot:before {
+          position: absolute;
+          content: "|";
+          top: -.5em;
+          left: 0;
+          width: 100%;
+          text-align: center;
+          font-size: .7em;
+        }
+        #spritz_word_pivot:after {
+          position: absolute;
+          content: "|";
+          top: 1.5em;
+          left: 0;
+          width: 100%;
+          text-align: center;
+          font-size: .7em;
+        }
+
+      `;
+
+      this.styleSheet = document.createElement("style");
+      this.styleSheet.textContent = this.spritzStyles;
+      document.head.appendChild(this.styleSheet);
+
+
       this.rootDiv.id = "spritz_root";
-      this.rootDiv.align = "center";
-      this.rootDiv.style.position = "fixed";
-      this.rootDiv.style.zIndex = "9999";
-      this.rootDiv.style.width = "500px";
-      this.rootDiv.style.left = "50%";
-      this.rootDiv.style.margin = "0px";
-      this.rootDiv.style.marginLeft = "-200px";
-      this.rootDiv.style.padding = "10px";
-      this.rootDiv.style.backgroundColor = "white";
-      this.rootDiv.style.borderColor = "black";
-      this.rootDiv.style.borderStyle = "solid";
-      this.rootDiv.style.borderWidth = "3px";
-      this.rootDiv.style.cursor = "move";
       this.mouseDown = false;
       this.rootDiv.onmousedown = (function(_this) {
         return function() {
@@ -72,25 +124,14 @@
           return _this.mouseDown = false;
         };
       })(this));
-      font = "bold 32px Courier";
-      this.prevwordDiv = this.addUiElement("div", "spritz_word_prev", this.rootDiv);
-      this.wordDiv = this.addUiElement("div", "spritz_word", this.rootDiv);
-      this.nextwordDiv = this.addUiElement("div", "spritz_word_next", this.rootDiv);
-      this.wordDiv.style.display = "inline-block";
-      this.wordDiv.style.padding = "0 1em";
-      this.prevwordDiv.style.display = "inline-block";
-      this.nextwordDiv.style.display = "inline-block";
-      this.prevwordDiv.style.font = font;
-      this.nextwordDiv.style.font = font;
-      this.prevwordDiv.style.color = "#ddd";
-      this.nextwordDiv.style.color = "#ddd";      
-      this.formerSpan = this.addUiElement("span", "spritz_former", this.wordDiv);
-      this.formerSpan.style.font = font;
-      this.pivotSpan = this.addUiElement("span", "spritz_pivot", this.wordDiv);
-      this.pivotSpan.style.font = font;
-      this.pivotSpan.style.color = "red";
-      this.latterSpan = this.addUiElement("span", "spritz_latter", this.wordDiv);
-      this.latterSpan.style.font = font;
+
+      this.wordFlex= this.addUiElement("div", "spritz-flex-container", this.rootDiv);
+      this.wordPrev = this.addUiElement("div", "spritz_word_prev", this.wordFlex);    
+      this.former = this.addUiElement("span", "spritz_word_former", this.wordFlex);
+      this.pivot = this.addUiElement("span", "spritz_word_pivot", this.wordFlex);
+      this.latter = this.addUiElement("span", "spritz_word_latter", this.wordFlex);
+      this.wordNext= this.addUiElement("div", "spritz_word_next", this.wordFlex);
+
       this.controlsDiv = this.addUiElement("div", "spritz_controls", this.rootDiv);
       this.wpmSelect = this.addUiElement("select", "spritz_wpm", this.controlsDiv);
       this.wpmSelect.onclick = (function(_this) {
@@ -150,7 +191,9 @@
     };
 
     Spritz.prototype.remove = function() {
-      return document.body.removeChild(this.rootDiv);
+      document.body.removeChild(this.rootDiv);
+      document.head.removeChild(this.styleSheet);
+      return;
     };
 
     Spritz.prototype.getWPM = function() {
@@ -167,7 +210,7 @@
         pivotIndex = Math.floor(word.length / 2);
       }
       pivot = word.charAt(pivotIndex);
-      this.pivotSpan.innerHTML = pivot;
+      this.pivot.innerHTML = pivot;
       latter = "";
       if (word.length > 2) {
         latter = word.slice(pivotIndex + 1, word.length);
@@ -181,12 +224,11 @@
       }
       while (latter.length > former.length) {
         former = "\u00A0" + former;
-      }
-      
-      this.prevwordDiv.innerHTML = (typeof prevword !== 'undefined') ? prevword : '';
-      this.nextwordDiv.innerHTML =  (typeof nextword !== 'undefined') ? nextword : '';
-      this.formerSpan.innerHTML = former;
-      return this.latterSpan.innerHTML = latter;
+      }      
+      /*this.wordPrev.innerHTML = (typeof prevword !== 'undefined') ? prevword.trim() : '';
+      this.wordNext.innerHTML =  (typeof nextword !== 'undefined') ? nextword.trim() : '';*/
+      this.former.innerHTML = former;
+      return this.latter.innerHTML = latter;
     };
 
     Spritz.prototype.start = function() {
