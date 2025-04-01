@@ -1,10 +1,8 @@
-# VanillaSpritz
-VanillaSpritz is a Spritz style reader in a Bookmarklet. VanillaSpritz does not contain any analytics, does not use any external scripts or libraries and does not make any AJAX calls.
-
-![vanillaspritz](https://github.com/user-attachments/assets/c1a54fe2-6e45-4d6f-a82d-2d5f4eb9d005)
+# RSVP Reader
+RSVP Reader is a bookmarklet ustilizing the [Rapid Serial Visual Presentation](https://en.wikipedia.org/wiki/Rapid_serial_visual_presentation) (RSVP) method, where words are displayed one at a time in a fixed position to improve reading speed and comprehension. RSVP Reader does not contain any analytics, does not use any external scripts or libraries and does not make any AJAX calls.
 
 ## Installation
-Create the VanillaSpritz bookmarklet to your bookmarks bar.
+Drag the RSVP Reader bookmarklet to your bookmarks bar.
 
 ## Usage
 * Highlight the text you want to read
@@ -13,6 +11,12 @@ Create the VanillaSpritz bookmarklet to your bookmarks bar.
 * You can pause/resume the reading and adjust the WPM during reading
 
 ## Changelog
+_03/31/2025_ Many improvements with the help of [Gemini 2.5 Pro](https://gemini.google.com/). 
+* Reworked UI for better layout and control
+* Added time estimate and progress bar
+* Renamed project to RSVP Reader
+* Added algorithm to detect likely content if no text is selected
+
 _10/18/2024_ Initial Release based on [CoffeeSpritz](https://github.com/cbarraco/CoffeeSpritz)
 * Added previous and next words in muted color
 * Added Pause / Resume function
@@ -20,18 +24,19 @@ _10/18/2024_ Initial Release based on [CoffeeSpritz](https://github.com/cbarraco
 * Fixed layout bug when WPM dropdown is opened during a read
 
 ## TO DO
-* If no text is selected, auto detect largest content block on the page with JS (without readibility api).
+* ~~If no text is selected, auto detect largest content block on the page with JS (without readibility api).~~
 * Rewind X seconds
 * UI improvements
-    * Add vertical guidelines above red letter like original implementation
-    * Optimize layout of overly
-    * Fix jumpy overlay when dropdown opens
+    * ~~Add vertical guidelines above red letter like original implementation~~
+    * ~~Optimize layout of overly~~
+    * ~~Fix jumpy overlay when dropdown opens~~
     * Improve / add button controls
 
 ## Acknowledgements
 * [CoffeeSpritz](https://github.com/cbarraco/CoffeeSpritz)
 * [OpenSpritz](https://github.com/Miserlou/OpenSpritz)
-* [Spritz Incorporated](http://www.spritzinc.com/).
+* [Spritz Incorporated](http://www.spritzinc.com/)
+* [Gemini 2.5 Pro](https://gemini.google.com/)
 
 ## Notice
-CoffeeSpritz is not affiliated with [Spritz Incorporated](http://www.spritzinc.com/).
+RSVP Reader is not affiliated with [Spritz Incorporated](http://www.spritzinc.com/).
