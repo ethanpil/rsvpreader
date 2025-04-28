@@ -1,4 +1,6 @@
 javascript:(function() {
+ 
+  
   'use strict'; // Enforce stricter parsing and error handling
 
   // --- Polyfill for Element.remove() for older browsers ---
@@ -31,31 +33,54 @@ javascript:(function() {
       this.MIN_WORD_COUNT = 25;
 
       // --- Core Reading Loop Function ---
+      // Defined as an arrow function to preserve 'this' context when used with setTimeout.
       this.tick = () => {
-          if (!this.isPlaying) return;
+          if (!this.isPlaying) return; // Exit if paused or stopped
 
           if (this.currentWordIndex < this.words.length) {
               const currentWord = this.words[this.currentWordIndex];
-              let delayMultiplier = 1.0;
-              if (currentWord.length > 8) delayMultiplier += 0.3;
-              if (/[.,;!?]$/.test(currentWord)) delayMultiplier += 0.5;
 
+              // --- Display current word and update index ---
               this.setWord(currentWord);
-              this.currentWordIndex++; // Increment *before* updating display
-
+              this.currentWordIndex++; // Increment *before* calculating next interval based on the word *just shown*
               this.updateProgressDisplay(); // Update progress bar and time
 
+              // --- Calculate base interval for next pause ---
               const currentWpm = this.getWPM();
-              const nextInterval = (60000 / currentWpm) * delayMultiplier;
+              const baseInterval = 60000 / currentWpm; // Normal interval based on WPM
+
+              // --- Determine if a longer pause is needed AFTER this word ---
+              let nextInterval;
+              
+              const isLongWord = currentWord.length > 8;
+              const hasPausePunctuation = /[.,:;?\-!]$/.test(currentWord);
+
+              if (hasPausePunctuation) {
+                  // Apply longer pause after punctuation
+                  nextInterval = baseInterval * 1.6;
+                  // console.log(`Extra pause after: "${currentWord}"`);
+              } else if (isLongWord) {
+                   nextInterval = baseInterval * 1.6;
+              } else {
+                  // Use the standard base interval otherwise
+                  nextInterval = baseInterval;
+                  // NOTE: The previous subtle delay for long words (>8 chars) is removed
+                  // in favor of this clearer rule. It could be added back here if needed.
+              }
+
+              // --- Schedule Next Word ---
               clearTimeout(this.intervalId);
               this.intervalId = setTimeout(this.tick, nextInterval);
+
           } else {
+              // --- End of Text ---
               this.stop();
               this.setWord("Finished!");
-              this.progressBar.style.width = '100%'; // Ensure bar is full on finish
+              this.progressBar.style.width = '100%';  // Ensure bar is full on finish
               this.timeRemainingDisplay.textContent = this.formatTime(0); // Show 0 time at end
           }
       };
+
 
       // --- WPM Change Handler ---
        this.handleWpmChange = () => {
@@ -102,7 +127,7 @@ javascript:(function() {
         document.querySelectorAll(commonSelectors.join(', ')).forEach(el => {
              if (this.isPotentialContent(el) && !candidates.some(c => c.contains(el))) { candidates.push(el); }
         });
-        console.log(`Found ${candidates.length} initial candidates.`);
+        // console.log(`Found ${candidates.length} initial candidates.`); // Optional debug
         candidates.forEach(el => {
             const score = this.scoreElement(el);
             if (score > maxScore) { maxScore = score; bestCandidate = el; }
@@ -266,14 +291,12 @@ javascript:(function() {
     updateProgressDisplay() {
         if (!this.words || this.words.length === 0) {
             this.progressBar.style.width = '0%';
-            this.timeRemainingDisplay.textContent = "-";
-            return;
+            this.timeRemainingDisplay.textContent = "-"; return;
         }
         const progressPercent = (this.currentWordIndex / this.words.length) * 100;
         this.progressBar.style.width = `${Math.min(100, Math.max(0, progressPercent))}%`;
         const wordsRemaining = this.words.length - this.currentWordIndex;
-        const currentWpm = this.getWPM();
-        let totalSecondsRemaining = 0;
+        const currentWpm = this.getWPM(); let totalSecondsRemaining = 0;
         if (currentWpm > 0 && wordsRemaining > 0) {
             const minutesRemaining = wordsRemaining / currentWpm;
             totalSecondsRemaining = minutesRemaining * 60;
@@ -281,11 +304,11 @@ javascript:(function() {
         // Update display only if playing or just started (words list available)
         if (this.isPlaying || this.currentWordIndex === 0 && this.words.length > 0) {
              this.timeRemainingDisplay.textContent = this.formatTime(totalSecondsRemaining);
-        } else if (this.currentWordIndex === this.words.length) { // Handle finished state
+        } else if (this.currentWordIndex === this.words.length) { 
             this.timeRemainingDisplay.textContent = this.formatTime(0);
         }
-        else { // Handle stopped/initial state
-            this.timeRemainingDisplay.textContent = "-";
+        else {  // Handle stopped/initial state
+            this.timeRemainingDisplay.textContent = "-"; 
         }
     }
 
@@ -300,29 +323,25 @@ javascript:(function() {
             }
             if (!textToUse || textToUse.length < 10) {
                 this.setWord("Select text or find content?");
-                alert("Please select text on the page, or RSVP couldn't automatically find the main content.");
+                alert("Please select text on the page. RSVP couldn't automatically find the main content.");
                 this.updateProgressDisplay(); // Ensure reset state
                 return;
             }
             this.words = textToUse.split(/\s+/).filter(w => w.length > 0);
             if (this.words.length === 0) {
-                 this.setWord("No words found?");
+                 this.setWord("No words found?"); 
                  this.updateProgressDisplay(); // Ensure reset state
                  return;
             }
-            // Reset progress and update initial time *after* words are set
-            this.currentWordIndex = 0;
+            this.currentWordIndex = 0; 
             this.updateProgressDisplay();
         }
-
-        if (this.words.length === 0 || this.currentWordIndex >= this.words.length) {
-            this.stop(); return;
+        if (this.words.length === 0 || this.currentWordIndex >= this.words.length) { 
+            this.stop();
+            return; 
         }
-
-        this.isPlaying = true;
-        this.startButton.textContent = "Pause";
+        this.isPlaying = true; this.startButton.textContent = "Pause";
         this.wpmSelect.disabled = false;
-
         clearTimeout(this.intervalId);
         const baseInterval = 60000 / this.getWPM();
         this.intervalId = setTimeout(this.tick, baseInterval);
@@ -330,8 +349,7 @@ javascript:(function() {
 
     // --- Pause Reading ---
     pause() {
-      clearTimeout(this.intervalId);
-      this.intervalId = null;
+      clearTimeout(this.intervalId); this.intervalId = null; 
       this.isPlaying = false;
       this.startButton.textContent = "Continue";
       this.wpmSelect.disabled = false;
@@ -340,12 +358,11 @@ javascript:(function() {
 
     // --- Stop Reading and Reset ---
     stop() {
-        clearTimeout(this.intervalId);
+        clearTimeout(this.intervalId); 
         this.intervalId = null;
-        this.currentWordIndex = 0;
-        this.isPlaying = false;
+        this.currentWordIndex = 0; this.isPlaying = false;
         this.startButton.textContent = "Start";
-        this.wpmSelect.disabled = false;
+        this.wpmSelect.disabled = false;       
         // Reset progress bar and time display fully on stop
         this.progressBar.style.width = '0%';
         this.timeRemainingDisplay.textContent = "-";
@@ -366,11 +383,14 @@ javascript:(function() {
 
   // --- Initialize ---
   try {
-      if (window.rsvpInstance) { console.log("Removing existing RSVP instance."); window.rsvpInstance.remove(); }
+      if (window.rsvpInstance) { 
+        console.log("Removing existing RSVP instance."); 
+        window.rsvpInstance.remove(); 
+    }
       window.rsvpInstance = new RSVPReader();
   } catch (error) {
       console.error("Failed to initialize RSVP:", error);
       alert("Error initializing RSVP reader. See console for details.");
   }
-
+  
 })(); // End bookmarklet IIFE
