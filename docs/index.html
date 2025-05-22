@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSVP Reader</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>RSVP Reader</h1>
+    </header>
+    <main>
+        <section id="readme-content">
+            <!-- README content will be loaded here -->
+            <p>Loading README...</p>
+        </section>
+        <section id="downloads">
+            <h2>Downloads</h2>
+            <p>Bookmarklet and extension download links will appear here once generated.</p>
+            <ul>
+                <li><a href="../rsvp-reader.js" download="rsvp-reader.js">Download rsvp-reader.js (Raw)</a></li>
+                <!-- Bookmarklet link will be added by workflow -->
+                <!-- Chrome extension link will be added by workflow -->
+            </ul>
+        </section>
+    </main>
+    <footer>
+        <p>Powered by RSVP Reader</p>
+    </footer>
+    <script>
+        // Simple script to fetch and display README.md
+        fetch('../README.md')
+            .then(response => response.text())
+            .then(text => {
+                // This is a very basic Markdown to HTML conversion.
+                // For a richer display, a proper Markdown library would be needed.
+                // For now, just replacing newlines with <br> and handling simple headers.
+                let html = text.replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                               .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                               .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                               .replace(/\n/g, '<br>');
+                // A more robust solution would be to use a library like Showdown.js or Marked.js
+                // if complex markdown rendering is needed.
+                // For simplicity, we'll stick to this basic conversion.
+                // A better approach for complex markdown is to convert it to HTML in the build workflow.
+                document.getElementById('readme-content').innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error fetching README:', error);
+                document.getElementById('readme-content').innerHTML = '<p>Error loading README.</p>';
+            });
+    </script>
+</body>
+</html>

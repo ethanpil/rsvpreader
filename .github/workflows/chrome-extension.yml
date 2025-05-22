@@ -1,0 +1,144 @@
+name: Build Chrome Extension and Update Page
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_extension:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required to push changes back to the repo
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install JSDOM (for HTML update)
+        run: npm install jsdom # jsdom needed for update-html-extension.js
+
+      - name: Create manifest.json
+        run: |
+          cat <<EOF > manifest.json
+          {
+            "manifest_version": 3,
+            "name": "RSVP Reader Extension",
+            "version": "1.0.1",
+            "description": "Reads selected text using RSVP method.",
+            "icons": {
+              "128": "rsvp.png"
+            },
+            "permissions": ["activeTab", "scripting"],
+            "action": {
+              "default_popup": "popup.html",
+              "default_icon": {
+                "128": "rsvp.png"
+              }
+            }
+          }
+          EOF
+          echo "manifest.json created."
+
+      - name: Create popup.html
+        run: |
+          cat <<EOF > popup.html
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>RSVP Reader</title>
+            <meta charset="utf-8">
+            <style>
+              body { width: 200px; font-family: sans-serif; text-align: center; padding: 10px;}
+              button { width: 100%; padding: 10px; margin-top: 5px; background-color: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+              button:hover { background-color: #0056b3; }
+            </style>
+          </head>
+          <body>
+            <p>Click to activate RSVP Reader on the current page.</p>
+            <button id="activateReader">Activate RSVP</button>
+            <script src="popup.js"></script>
+          </body>
+          </html>
+          EOF
+          echo "popup.html created."
+
+      - name: Create popup.js
+        run: |
+          cat <<EOF > popup.js
+          document.getElementById('activateReader').addEventListener('click', () => {
+            chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+              if (tabs[0] && tabs[0].id) {
+                chrome.scripting.executeScript({
+                  target: {tabId: tabs[0].id},
+                  files: ['rsvp-reader.js']
+                }).then(() => {
+                  console.log("RSVP Reader script injected.");
+                  window.close(); // Close popup after injection
+                }).catch(err => console.error("Error injecting script: ", err));
+              } else {
+                console.error("Could not get active tab ID for scripting.");
+              }
+            });
+          });
+          EOF
+          echo "popup.js created."
+
+      - name: Zip the extension
+        run: zip rsvp-reader-extension.zip manifest.json popup.html popup.js rsvp-reader.js rsvp.png
+
+      - name: Update docs/index.html for Extension Download
+        run: |
+          cat <<EOF > update-html-extension.js
+          const fs = require('fs');
+          const { JSDOM } = require('jsdom');
+
+          const htmlPath = 'docs/index.html';
+          const extensionHref = '../rsvp-reader-extension.zip'; 
+          const extensionZipName = 'rsvp-reader-extension.zip';
+
+          let htmlContent = fs.readFileSync(htmlPath, 'utf8');
+          const dom = new JSDOM(htmlContent);
+          const document = dom.window.document;
+
+          let link = document.getElementById('extension-download-link');
+          const downloadsList = document.querySelector('#downloads ul');
+
+          if (!downloadsList) {
+              console.error('Could not find downloads list <ul> in HTML.');
+              process.exit(1); // Exit if list not found
+          }
+          
+          if (!link) {
+              const listItem = document.createElement('li');
+              link = document.createElement('a');
+              link.id = 'extension-download-link';
+              link.textContent = 'Download Chrome Extension (ZIP)';
+              listItem.appendChild(link);
+              downloadsList.appendChild(listItem);
+          }
+          link.href = extensionHref;
+          link.setAttribute('download', extensionZipName);
+
+          fs.writeFileSync(htmlPath, dom.serialize());
+          console.log('Updated HTML with Chrome extension download link.');
+          EOF
+          node update-html-extension.js
+          echo "docs/index.html updated for extension download."
+
+      - name: Commit and push extension and updated HTML
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add rsvp-reader-extension.zip docs/index.html manifest.json popup.html popup.js
+          if git diff --staged --quiet; then
+            echo "No changes to commit for extension."
+          else
+            git commit -m 'Build Chrome extension and update index.html'
+            git push
+            echo "Chrome extension and HTML changes committed and pushed."
+          fi
