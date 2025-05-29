@@ -1,4 +1,4 @@
-name: Generate Bookmarklet and Update Page
+name: Generate Minified Bookmarklet Script
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build:
+  build_minified_script:
     runs-on: ubuntu-latest
     permissions:
       contents: write # Required to push changes back to the repo
@@ -19,80 +19,26 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install dependencies (uglify-js, jsdom)
-        run: npm install uglify-js jsdom # Installs locally to node_modules
+      - name: Install UglifyJS
+        run: npm install uglify-js # Installs locally to node_modules
 
-      - name: Minify rsvp-reader.js
-        run: ./node_modules/.bin/uglifyjs rsvp-reader.js -o rsvp-reader.min.js -c -m --toplevel
+      - name: Minify rsvp-reader.js to docs/
+        run: ./node_modules/.bin/uglifyjs rsvp-reader.js -o docs/rsvp-reader.min.js -c -m --toplevel
 
-      - name: Generate Bookmarklet HREF
-        run: |
-          cat <<EOF > generate-bookmarklet-href.js
-          const fs = require('fs');
-          const content = fs.readFileSync('rsvp-reader.min.js', 'utf8');
-          const bookmarkletHref = 'javascript:' + encodeURIComponent(content.trim());
-          fs.writeFileSync('bookmarklet_href.txt', bookmarkletHref);
-          EOF
-          node generate-bookmarklet-href.js
-          echo "Bookmarklet HREF generated."
-
-      - name: Update docs/index.html
-        run: |
-          cat <<EOF > update-html.js
-          const fs = require('fs');
-          const { JSDOM } = require('jsdom');
-
-          const htmlPath = 'docs/index.html';
-          const href = fs.readFileSync('bookmarklet_href.txt', 'utf8');
-          let htmlContent = fs.readFileSync(htmlPath, 'utf8');
-          const dom = new JSDOM(htmlContent);
-          const document = dom.window.document;
-
-          let link = document.getElementById('bookmarklet-link');
-          const downloadsList = document.querySelector('#downloads ul');
-
-          if (!downloadsList) {
-              console.error('Could not find downloads list <ul> in HTML.');
-              process.exit(1); // Exit if list not found
-          }
-
-          if (!link) {
-              const listItem = document.createElement('li');
-              link = document.createElement('a');
-              link.id = 'bookmarklet-link';
-              link.textContent = 'RSVP Reader Bookmarklet';
-              listItem.appendChild(link);
-              
-              // Ensure the raw JS download link is always present and first
-              let rawJsLi = document.querySelector('#downloads ul li a[href="../rsvp-reader.js"]');
-              if (!rawJsLi) {
-                  const rawLi = document.createElement('li');
-                  const rawA = document.createElement('a');
-                  rawA.href = "../rsvp-reader.js";
-                  rawA.setAttribute("download", "rsvp-reader.js");
-                  rawA.textContent = "Download rsvp-reader.js (Raw)";
-                  rawLi.appendChild(rawA);
-                  downloadsList.prepend(rawLi); // Add to the beginning
-              }
-              downloadsList.appendChild(listItem); // Add bookmarklet link after
-          }
-          link.href = href;
-          fs.writeFileSync(htmlPath, dom.serialize());
-          console.log('Updated HTML with new bookmarklet link.');
-          EOF
-          node update-html.js
-          echo "docs/index.html updated."
-
-      - name: Commit and push changes
+      - name: Commit and push docs/rsvp-reader.min.js
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add docs/index.html rsvp-reader.min.js
-          # Check if there are changes to commit
-          if git diff --staged --quiet; then
-            echo "No changes to commit."
+          # Check if the target file was actually created/modified before adding
+          if [ -f "docs/rsvp-reader.min.js" ]; then
+            git add docs/rsvp-reader.min.js
+            if git diff --staged --quiet; then
+              echo "No changes to docs/rsvp-reader.min.js to commit."
+            else
+              git commit -m 'Workflow: Update docs/rsvp-reader.min.js for bookmarklet'
+              git push
+              echo "docs/rsvp-reader.min.js committed and pushed."
+            fi
           else
-            git commit -m 'Workflow: Update bookmarklet and index.html'
-            git push
-            echo "Changes committed and pushed."
+            echo "docs/rsvp-reader.min.js was not created. Skipping commit."
           fi

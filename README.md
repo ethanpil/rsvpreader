@@ -38,6 +38,7 @@ _10/18/2024_ Initial Release based on [CoffeeSpritz](https://github.com/cbarraco
 * [OpenSpritz](https://github.com/Miserlou/OpenSpritz)
 * [Spritz Incorporated](http://www.spritzinc.com/)
 * [Gemini 2.5 Pro](https://gemini.google.com/)
+* Google Jules - AI Software Engineering Agent (https://jules.google.com/)
 
 ## Notice
 RSVP Reader is not affiliated with [Spritz Incorporated](http://www.spritzinc.com/).
